@@ -8,7 +8,9 @@ const BROKEN_FONT_ALARM_THRESHOLD = 0.1;
 
 export default class TextLayerItem extends PureComponent {
   state = {
-    transform: null,
+		transform: null,
+		top: null,
+		left: null
   }
 
   componentDidMount() {
@@ -94,12 +96,14 @@ export default class TextLayerItem extends PureComponent {
       element.style.fontFamily = fallbackFontName;
 
       actualWidth = this.getElementWidth(element);
-    }
+		}
 
     const ascent = fontData ? fontData.ascent : 1;
 
     this.setState({
-      transform: `scaleX(${(targetWidth / actualWidth) / 3}) translateY(${(1 - ascent) * 100}%)`,
+			left: `${(this.left / this.context.page.getViewport(1).width) * 100}%`,
+			top: `${(this.top / this.context.page.getViewport(1).height) * 100}%`,
+      transform: `scaleX(${(targetWidth * 1.02 / actualWidth) / 3}) translateY(${(1 - ascent) * 100}%)`,
     });
   }
 
@@ -109,10 +113,10 @@ export default class TextLayerItem extends PureComponent {
   };
 
   render() {
-    const { fontSize, top, left } = this;
+    const { fontSize } = this;
     const { scale } = this.context;
     const { fontName, str: text } = this.props;
-		const { transform } = this.state;
+		const { top, left, transform } = this.state;
 
     return (
       <div
@@ -121,11 +125,11 @@ export default class TextLayerItem extends PureComponent {
           fontFamily: fontName,
           fontSize: `${(fontSize * scale) / 3}px`,
           position: 'absolute',
-          top: `${(top * scale) / 3}px`,
-          left: `${(left * scale) / 3}px`,
           transformOrigin: 'left bottom',
           whiteSpace: 'pre',
-          pointerEvents: 'all',
+					pointerEvents: 'all',
+					left,
+					top,
           transform,
         }}
         ref={(ref) => { this.item = ref; }}
