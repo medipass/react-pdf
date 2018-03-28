@@ -359,7 +359,8 @@ Page.defaultProps = {
   renderAnnotations: true,
   renderMode: 'canvas',
   renderTextLayer: true,
-  scale: 1.0,
+	scale: 1.0,
+	textLayerScale: 1.0
 };
 
 Page.childContextTypes = {
@@ -401,7 +402,8 @@ Page.propTypes = {
   renderMode: PropTypes.oneOf(['canvas', 'svg']),
   renderTextLayer: PropTypes.bool,
   rotate: isRotate,
-  scale: PropTypes.number,
+	scale: PropTypes.number,
+	textLayerScale: PropTypes.number,
   width: PropTypes.number,
   ...eventsProps(),
 };

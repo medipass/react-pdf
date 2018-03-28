@@ -99,7 +99,7 @@ export default class TextLayerItem extends PureComponent {
     const ascent = fontData ? fontData.ascent : 1;
 
     this.setState({
-      transform: `scaleX(${targetWidth / actualWidth}) translateY(${(1 - ascent) * 100}%)`,
+      transform: `scaleX(${(targetWidth / actualWidth) / 3}) translateY(${(1 - ascent) * 100}%)`,
     });
   }
 
@@ -112,17 +112,17 @@ export default class TextLayerItem extends PureComponent {
     const { fontSize, top, left } = this;
     const { scale } = this.context;
     const { fontName, str: text } = this.props;
-    const { transform } = this.state;
+		const { transform } = this.state;
 
     return (
       <div
         style={{
           height: '1em',
           fontFamily: fontName,
-          fontSize: `${fontSize * scale}px`,
+          fontSize: `${(fontSize * scale) / 3}px`,
           position: 'absolute',
-          top: `${top * scale}px`,
-          left: `${left * scale}px`,
+          top: `${(top * scale) / 3}px`,
+          left: `${(left * scale) / 3}px`,
           transformOrigin: 'left bottom',
           whiteSpace: 'pre',
           pointerEvents: 'all',
