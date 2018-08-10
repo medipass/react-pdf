@@ -1,22 +1,16 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { mount, shallow } from 'enzyme';
 
-import { Document } from '../entry.noworker';
+import { pdfjs } from '../entry.jest';
 
-import { makeAsyncCallback, loadPDF, muteConsole, restoreConsole } from './utils';
+import Document from '../Document';
 
-const {
-  arrayBuffer: fileArrayBuffer,
-  blob: fileBlob,
-  file: fileFile,
-  dataURI: fileDataURI,
-} = loadPDF('./__mocks__/_pdf.pdf');
+import {
+  makeAsyncCallback, loadPDF, muteConsole, restoreConsole,
+} from './utils';
 
-const {
-  arrayBuffer: fileArrayBuffer2,
-  file: fileFile2,
-} = loadPDF('./__mocks__/_pdf2.pdf');
+const pdfFile = loadPDF('./__mocks__/_pdf.pdf');
+const pdfFile2 = loadPDF('./__mocks__/_pdf2.pdf');
 
 const OK = Symbol('OK');
 
@@ -24,20 +18,16 @@ const OK = Symbol('OK');
 
 const Child = () => <div className="Child" />;
 
-Child.contextTypes = {
-  pdf: PropTypes.any,
-};
-
 describe('Document', () => {
   // Object with basic loaded PDF information that shall match after successful loading
   const desiredLoadedPdf = {};
   const desiredLoadedPdf2 = {};
 
   beforeAll(async () => {
-    const pdf = await PDFJS.getDocument({ data: fileArrayBuffer });
+    const pdf = await pdfjs.getDocument({ data: pdfFile.arrayBuffer });
     desiredLoadedPdf.pdfInfo = pdf.pdfInfo;
 
-    const pdf2 = await PDFJS.getDocument({ data: fileArrayBuffer2 });
+    const pdf2 = await pdfjs.getDocument({ data: pdfFile2.arrayBuffer });
     desiredLoadedPdf2.pdfInfo = pdf2.pdfInfo;
   });
 
@@ -48,7 +38,7 @@ describe('Document', () => {
 
       shallow(
         <Document
-          file={fileDataURI}
+          file={pdfFile.dataURI}
           onLoadSuccess={onLoadSuccess}
           onSourceSuccess={onSourceSuccess}
         />
@@ -65,7 +55,7 @@ describe('Document', () => {
 
       shallow(
         <Document
-          file={{ url: fileDataURI }}
+          file={{ url: pdfFile.dataURI }}
           onLoadSuccess={onLoadSuccess}
           onSourceSuccess={onSourceSuccess}
         />
@@ -82,7 +72,7 @@ describe('Document', () => {
 
       shallow(
         <Document
-          file={fileArrayBuffer}
+          file={pdfFile.arrayBuffer}
           onLoadSuccess={onLoadSuccess}
           onSourceSuccess={onSourceSuccess}
         />
@@ -99,7 +89,7 @@ describe('Document', () => {
 
       shallow(
         <Document
-          file={fileBlob}
+          file={pdfFile.blob}
           onLoadSuccess={onLoadSuccess}
           onSourceSuccess={onSourceSuccess}
         />
@@ -116,7 +106,7 @@ describe('Document', () => {
 
       shallow(
         <Document
-          file={fileFile}
+          file={pdfFile.file}
           onLoadSuccess={onLoadSuccess}
           onSourceSuccess={onSourceSuccess}
         />
@@ -127,13 +117,33 @@ describe('Document', () => {
       await expect(onLoadSuccessPromise).resolves.toMatchObject(desiredLoadedPdf);
     });
 
+    it('fails to load a file and calls onSourceError given invalid file source', async () => {
+      const { func: onSourceError, promise: onSourceErrorPromise } = makeAsyncCallback();
+
+      muteConsole();
+
+      shallow(
+        <Document
+          file={() => null}
+          onSourceError={onSourceError}
+        />
+      );
+
+      expect.assertions(1);
+      return onSourceErrorPromise.then((error) => {
+        expect(error).toMatchObject(expect.any(Error));
+
+        restoreConsole();
+      });
+    });
+
     it('replaces a file properly', async () => {
       const { func: onSourceSuccess, promise: onSourceSuccessPromise } = makeAsyncCallback(OK);
       const { func: onLoadSuccess, promise: onLoadSuccessPromise } = makeAsyncCallback();
 
       const mountedComponent = shallow(
         <Document
-          file={fileFile}
+          file={pdfFile.file}
           onLoadSuccess={onLoadSuccess}
           onSourceSuccess={onSourceSuccess}
         />
@@ -147,7 +157,7 @@ describe('Document', () => {
       const { func: onLoadSuccess2, promise: onLoadSuccessPromise2 } = makeAsyncCallback();
 
       mountedComponent.setProps({
-        file: fileFile2,
+        file: pdfFile2.file,
         onLoadSuccess: onLoadSuccess2,
         onSourceSuccess: onSourceSuccess2,
       });
@@ -186,10 +196,10 @@ describe('Document', () => {
         <Document />
       );
 
-      const noData = component.find('.react-pdf__message--no-data');
+      const noData = component.find('Message');
 
       expect(noData).toHaveLength(1);
-      expect(noData.text()).toBe('No PDF file specified.');
+      expect(noData.prop('children')).toBe('No PDF file specified.');
     });
 
     it('renders custom no data message when given nothing and noData prop is specified', () => {
@@ -197,10 +207,10 @@ describe('Document', () => {
         <Document noData="Nothing here" />
       );
 
-      const noData = component.find('.react-pdf__message--no-data');
+      const noData = component.find('Message');
 
       expect(noData).toHaveLength(1);
-      expect(noData.text()).toBe('Nothing here');
+      expect(noData.prop('children')).toBe('Nothing here');
     });
 
     it('renders "Loading PDF…" when loading a file', () => {
@@ -208,17 +218,17 @@ describe('Document', () => {
 
       const component = shallow(
         <Document
-          file={fileFile}
+          file={pdfFile.file}
           onLoadSuccess={onLoadSuccess}
         />
       );
 
       expect.assertions(2);
       return onLoadSuccessPromise.then(() => {
-        const loading = component.find('.react-pdf__message--loading');
+        const loading = component.find('Message');
 
         expect(loading).toHaveLength(1);
-        expect(loading.text()).toBe('Loading PDF…');
+        expect(loading.prop('children')).toBe('Loading PDF…');
       });
     });
 
@@ -227,7 +237,7 @@ describe('Document', () => {
 
       const component = shallow(
         <Document
-          file={fileFile}
+          file={pdfFile.file}
           loading="Loading"
           onLoadSuccess={onLoadSuccess}
         />
@@ -235,10 +245,10 @@ describe('Document', () => {
 
       expect.assertions(2);
       return onLoadSuccessPromise.then(() => {
-        const loading = component.find('.react-pdf__message--loading');
+        const loading = component.find('Message');
 
         expect(loading).toHaveLength(1);
-        expect(loading.text()).toBe('Loading');
+        expect(loading.prop('children')).toBe('Loading');
       });
     });
 
@@ -258,10 +268,10 @@ describe('Document', () => {
       expect.assertions(2);
       return onLoadErrorPromise.then(() => {
         component.update();
-        const error = component.find('.react-pdf__message--error');
+        const error = component.find('Message');
 
         expect(error).toHaveLength(1);
-        expect(error.text()).toBe('Failed to load PDF file.');
+        expect(error.prop('children')).toBe('Failed to load PDF file.');
 
         restoreConsole();
       });
@@ -284,12 +294,33 @@ describe('Document', () => {
       expect.assertions(2);
       return onLoadErrorPromise.then(() => {
         component.update();
-        const error = component.find('.react-pdf__message--error');
+        const error = component.find('Message');
 
         expect(error).toHaveLength(1);
-        expect(error.text()).toBe('Error');
+        expect(error.prop('children')).toBe('Error');
 
         restoreConsole();
+      });
+    });
+
+    it('passes renderMode prop to its children', () => {
+      const { func: onLoadSuccess, promise: onLoadSuccessPromise } = makeAsyncCallback();
+
+      const component = shallow(
+        <Document
+          file={pdfFile.file}
+          loading="Loading"
+          onLoadSuccess={onLoadSuccess}
+          renderMode="svg"
+        >
+          <Child />
+        </Document>
+      );
+
+      expect.assertions(1);
+      return onLoadSuccessPromise.then(() => {
+        component.update();
+        expect(component.instance().childContext.renderMode).toBe('svg');
       });
     });
 
@@ -298,7 +329,7 @@ describe('Document', () => {
 
       const component = shallow(
         <Document
-          file={fileFile}
+          file={pdfFile.file}
           loading="Loading"
           onLoadSuccess={onLoadSuccess}
           rotate={90}
@@ -310,7 +341,29 @@ describe('Document', () => {
       expect.assertions(1);
       return onLoadSuccessPromise.then(() => {
         component.update();
-        expect(component.instance().getChildContext().rotate).toBe(90);
+        expect(component.instance().childContext.rotate).toBe(90);
+      });
+    });
+
+    it('does not overwrite renderMode prop in its children when given renderMode prop to both Document and its children', () => {
+      const { func: onLoadSuccess, promise: onLoadSuccessPromise } = makeAsyncCallback();
+
+      const component = shallow(
+        <Document
+          file={pdfFile.file}
+          loading="Loading"
+          onLoadSuccess={onLoadSuccess}
+          renderMode="svg"
+        >
+          <Child renderMode="canvas" />
+        </Document>
+      );
+
+      expect.assertions(1);
+      return onLoadSuccessPromise.then(() => {
+        component.update();
+        const child = component.find('Child');
+        expect(child.prop('renderMode')).toBe('canvas');
       });
     });
 
@@ -319,7 +372,7 @@ describe('Document', () => {
 
       const component = shallow(
         <Document
-          file={fileFile}
+          file={pdfFile.file}
           loading="Loading"
           onLoadSuccess={onLoadSuccess}
           rotate={90}
@@ -335,5 +388,31 @@ describe('Document', () => {
         expect(child.prop('rotate')).toBe(180);
       });
     });
+  });
+
+  it('calls onClick callback when clicked a page (sample of mouse events family)', () => {
+    const onClick = jest.fn();
+
+    const component = mount(
+      <Document onClick={onClick} />
+    );
+
+    const document = component.find('.react-pdf__Document');
+    document.simulate('click');
+
+    expect(onClick).toHaveBeenCalled();
+  });
+
+  it('calls onTouchStart callback when touched a page (sample of touch events family)', () => {
+    const onTouchStart = jest.fn();
+
+    const component = mount(
+      <Document onTouchStart={onTouchStart} />
+    );
+
+    const document = component.find('.react-pdf__Document');
+    document.simulate('touchstart');
+
+    expect(onTouchStart).toHaveBeenCalled();
   });
 });

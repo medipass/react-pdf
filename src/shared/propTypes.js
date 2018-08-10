@@ -1,15 +1,15 @@
 import PropTypes from 'prop-types';
 import once from 'lodash.once';
+import { mouseEvents, touchEvents } from 'make-event-props';
 
 import { isDefined } from './utils';
-import { mouseEvents, touchEvents } from './events';
 
 import LinkService from '../LinkService';
 
 export const eventsProps = once(() => {
   const eventProps = {};
 
-  [].concat(mouseEvents, touchEvents).forEach((eventName) => {
+  [...mouseEvents, ...touchEvents].forEach((eventName) => {
     eventProps[eventName] = PropTypes.func;
   });
 
@@ -57,8 +57,7 @@ export const isPage = PropTypes.shape({
 });
 
 export const isPageIndex = (props, propName, componentName) => {
-  const pageIndex = props[propName];
-  const { pageNumber, pdf } = props;
+  const { [propName]: pageIndex, pageNumber, pdf } = props;
 
   if (!isDefined(pdf)) {
     return null;
@@ -87,8 +86,7 @@ export const isPageIndex = (props, propName, componentName) => {
 };
 
 export const isPageNumber = (props, propName, componentName) => {
-  const pageNumber = props[propName];
-  const { pageIndex, pdf } = props;
+  const { [propName]: pageNumber, pageIndex, pdf } = props;
 
   if (!isDefined(pdf)) {
     return null;
@@ -125,5 +123,7 @@ export const isPdf = PropTypes.oneOfType([
   }),
   PropTypes.bool,
 ]);
+
+export const isRenderMode = PropTypes.oneOf(['canvas', 'svg']);
 
 export const isRotate = PropTypes.oneOf([0, 90, 180, 270]);

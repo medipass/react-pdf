@@ -1,17 +1,37 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
+
+import PageContext from '../PageContext';
 
 import {
   callIfDefined,
   errorOnDev,
   getPixelRatio,
+  isCancelException,
   makePageCallback,
 } from '../shared/utils';
 
 import { isPage, isRotate } from '../shared/propTypes';
 
-export default class PageCanvas extends Component {
+export class PageCanvasInternal extends PureComponent {
+  componentDidMount() {
+    this.drawPageOnCanvas();
+  }
+
+  componentDidUpdate(prevProps) {
+    const { page, renderInteractiveForms } = this.props;
+    if (renderInteractiveForms !== prevProps.renderInteractiveForms) {
+      // Ensures the canvas will be re-rendered from scratch. Otherwise all form data will stay.
+      page.cleanup();
+      this.drawPageOnCanvas();
+    }
+  }
+
   componentWillUnmount() {
+    this.cancelRenderingTask();
+  }
+
+  cancelRenderingTask() {
     /* eslint-disable no-underscore-dangle */
     if (this.renderer && this.renderer._internalRenderTask.running) {
       this.renderer._internalRenderTask.cancel();
@@ -25,10 +45,10 @@ export default class PageCanvas extends Component {
   onRenderSuccess = () => {
     this.renderer = null;
 
-    const { page, scale } = this.context;
+    const { onRenderSuccess, page, scale } = this.props;
 
     callIfDefined(
-      this.context.onRenderSuccess,
+      onRenderSuccess,
       makePageCallback(page, scale),
     );
   }
@@ -37,23 +57,22 @@ export default class PageCanvas extends Component {
    * Called when a page fails to render.
    */
   onRenderError = (error) => {
-    if (
-      error.name === 'RenderingCancelledException' ||
-      error.name === 'PromiseCancelledException'
-    ) {
+    if (isCancelException(error)) {
       return;
     }
 
-    errorOnDev(error.message, error);
+    errorOnDev(error);
+
+    const { onRenderError } = this.props;
 
     callIfDefined(
-      this.context.onRenderError,
+      onRenderError,
       error,
     );
   }
 
   get renderViewport() {
-    const { page, rotate, scale } = this.context;
+    const { page, rotate, scale } = this.props;
 
     const pixelRatio = getPixelRatio();
 
@@ -61,19 +80,20 @@ export default class PageCanvas extends Component {
   }
 
   get viewport() {
-    const { page, rotate, scale } = this.context;
+    const { page, rotate, scale } = this.props;
 
     return page.getViewport(scale, rotate);
   }
 
-  drawPageOnCanvas = (canvas) => {
+  drawPageOnCanvas = () => {
+    const { canvasLayer: canvas } = this;
+
     if (!canvas) {
       return null;
     }
 
-    const { page } = this.context;
-
     const { renderViewport, viewport } = this;
+    const { page, renderInteractiveForms } = this.props;
 
     canvas.width = renderViewport.width;
     canvas.height = renderViewport.height;
@@ -86,14 +106,11 @@ export default class PageCanvas extends Component {
         return canvas.getContext('2d');
       },
       viewport: renderViewport,
+      renderInteractiveForms,
     };
 
     // If another render is in progress, let's cancel it
-    /* eslint-disable no-underscore-dangle */
-    if (this.renderer && this.renderer._internalRenderTask.running) {
-      this.renderer._internalRenderTask.cancel();
-    }
-    /* eslint-enable no-underscore-dangle */
+    this.cancelRenderingTask();
 
     this.renderer = page.render(renderContext);
 
@@ -110,16 +127,25 @@ export default class PageCanvas extends Component {
           display: 'block',
           userSelect: 'none',
         }}
-        ref={this.drawPageOnCanvas}
+        ref={(ref) => { this.canvasLayer = ref; }}
       />
     );
   }
 }
 
-PageCanvas.contextTypes = {
+PageCanvasInternal.propTypes = {
   onRenderError: PropTypes.func,
   onRenderSuccess: PropTypes.func,
   page: isPage.isRequired,
+  renderInteractiveForms: PropTypes.bool,
   rotate: isRotate,
   scale: PropTypes.number,
 };
+
+const PageCanvas = props => (
+  <PageContext.Consumer>
+    {context => <PageCanvasInternal {...context} {...props} />}
+  </PageContext.Consumer>
+);
+
+export default PageCanvas;

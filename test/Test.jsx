@@ -1,5 +1,5 @@
-import React, { Component } from 'react';
-import { Document, Outline, Page, setOptions } from 'react-pdf/src/entry.webpack';
+import React, { PureComponent } from 'react';
+import { Document, Outline, Page } from 'react-pdf/src/entry.webpack';
 import 'react-pdf/src/Page/AnnotationLayer.css';
 
 import './Test.less';
@@ -9,33 +9,43 @@ import ViewOptions from './ViewOptions';
 
 import { dataURItoBlob } from './shared/utils';
 
-setOptions({
+const options = {
   cMapUrl: 'cmaps/',
   cMapPacked: true,
-});
+};
 
 /* eslint-disable no-console */
 
-export default class Test extends Component {
+export default class Test extends PureComponent {
   state = {
     displayAll: false,
     file: null,
     numPages: null,
+    pageHeight: null,
     pageNumber: null,
+    pageScale: null,
     pageWidth: null,
     passMethod: 'normal',
     render: true,
     renderAnnotations: true,
+    renderInteractiveForms: true,
     renderMode: 'canvas',
     renderTextLayer: true,
     rotate: null,
   }
 
-  onDocumentLoadSuccess = ({ numPages }) =>
+  onDocumentLoadProgress = (progressData) => {
+    console.log('Loading a document', progressData.loaded / progressData.total);
+  }
+
+  onDocumentLoadSuccess = (document) => {
+    console.log('Loaded a document', document);
+    const { numPages } = document;
     this.setState({
       numPages,
       pageNumber: 1,
-    })
+    });
+  }
 
   onPageRenderSuccess = page =>
     console.log('Rendered a page', page);
@@ -80,30 +90,27 @@ export default class Test extends Component {
     }
   }
 
-  render() {
+  get pageProps() {
     const {
-      displayAll,
-      numPages,
-      pageNumber,
+      pageHeight,
+      pageScale,
       pageWidth,
-      passMethod,
-      render,
       renderAnnotations,
+      renderInteractiveForms,
       renderMode,
       renderTextLayer,
-      rotate,
     } = this.state;
-    const { file } = this;
 
-    const setState = state => this.setState(state);
-
-    const pageProps = {
+    return {
       className: 'custom-classname-page',
+      height: pageHeight,
       onClick: (event, page) => console.log('Clicked a page', { event, page }),
       onRenderSuccess: this.onPageRenderSuccess,
       renderAnnotations,
+      renderInteractiveForms,
       renderMode,
       renderTextLayer,
+      scale: pageScale,
       width: pageWidth,
       customTextRenderer: textItem => (
         textItem.str
@@ -115,6 +122,32 @@ export default class Test extends Component {
               ([...strArray, <mark key={currentIndex}>ipsum</mark>, currentValue])
           ), [])
       ),
+    };
+  }
+
+  render() {
+    const {
+      displayAll,
+      numPages,
+      pageHeight,
+      pageNumber,
+      pageScale,
+      pageWidth,
+      passMethod,
+      render,
+      renderAnnotations,
+      renderInteractiveForms,
+      renderMode,
+      renderTextLayer,
+      rotate,
+    } = this.state;
+    const { file, pageProps } = this;
+
+    const setState = state => this.setState(state);
+
+    const documentProps = {
+      file,
+      options,
     };
 
     return (
@@ -132,8 +165,11 @@ export default class Test extends Component {
             />
             <ViewOptions
               displayAll={displayAll}
+              pageHeight={pageHeight}
+              pageScale={pageScale}
               pageWidth={pageWidth}
               renderAnnotations={renderAnnotations}
+              renderInteractiveForms={renderInteractiveForms}
               renderMode={renderMode}
               renderTextLayer={renderTextLayer}
               rotate={rotate}
@@ -145,8 +181,8 @@ export default class Test extends Component {
               {
                 render &&
                   <Document
+                    {...documentProps}
                     className="custom-classname-document"
-                    file={file}
                   >
                     <Outline
                       className="custom-classname-outline"
@@ -159,10 +195,11 @@ export default class Test extends Component {
               {
                 render &&
                   <Document
+                    {...documentProps}
                     className="custom-classname-document"
                     onItemClick={this.onItemClick}
-                    file={file}
                     onClick={(event, pdf) => console.log('Clicked a document', { event, pdf })}
+                    onLoadProgress={this.onDocumentLoadProgress}
                     onLoadSuccess={this.onDocumentLoadSuccess}
                     onLoadError={this.onDocumentLoadError}
                     onSourceError={this.onDocumentLoadError}

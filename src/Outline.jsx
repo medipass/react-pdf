@@ -1,6 +1,10 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
+import makeEventProps from 'make-event-props';
 import mergeClassNames from 'merge-class-names';
+
+import DocumentContext from './DocumentContext';
+import OutlineContext from './OutlineContext';
 
 import OutlineItem from './OutlineItem';
 
@@ -8,24 +12,32 @@ import {
   callIfDefined,
   cancelRunningTask,
   errorOnDev,
+  isCancelException,
   makeCancellable,
 } from './shared/utils';
-import { makeEventProps } from './shared/events';
 
 import { eventsProps, isClassName, isPdf } from './shared/propTypes';
 
-export default class Outline extends Component {
+export class OutlineInternal extends PureComponent {
   state = {
     outline: null,
   }
 
   componentDidMount() {
+    const { pdf } = this.props;
+
+    if (!pdf) {
+      throw new Error('Attempted to load an outline, but no document was specified.');
+    }
+
     this.loadOutline();
   }
 
-  componentWillReceiveProps(nextProps, nextContext) {
-    if (nextContext.pdf !== this.context.pdf) {
-      this.loadOutline(nextContext);
+  componentDidUpdate(prevProps) {
+    const { pdf } = this.props;
+
+    if (prevProps.pdf && (pdf !== prevProps.pdf)) {
+      this.loadOutline();
     }
   }
 
@@ -33,75 +45,79 @@ export default class Outline extends Component {
     cancelRunningTask(this.runningTask);
   }
 
-  getChildContext() {
+  loadOutline = async () => {
+    const { pdf } = this.props;
+
+    this.setState((prevState) => {
+      if (!prevState.outline) {
+        return null;
+      }
+      return { outline: null };
+    });
+
+    try {
+      const cancellable = makeCancellable(pdf.getOutline());
+      this.runningTask = cancellable;
+      const outline = await cancellable.promise;
+      this.setState({ outline }, this.onLoadSuccess);
+    } catch (error) {
+      this.setState({ outline: false });
+      this.onLoadError(error);
+    }
+  }
+
+  get childContext() {
     return {
       onClick: this.onItemClick,
     };
   }
 
   get eventProps() {
+    // eslint-disable-next-line react/destructuring-assignment
     return makeEventProps(this.props, () => this.state.outline);
   }
 
   /**
    * Called when an outline is read successfully
    */
-  onLoadSuccess = (outline) => {
-    this.setState({ outline }, () => {
-      callIfDefined(
-        this.props.onLoadSuccess,
-        outline,
-      );
-    });
+  onLoadSuccess = () => {
+    const { onLoadSuccess } = this.props;
+    const { outline } = this.state;
+
+    callIfDefined(
+      onLoadSuccess,
+      outline,
+    );
   }
 
   /**
    * Called when an outline failed to read successfully
    */
   onLoadError = (error) => {
-    if (
-      error.name === 'RenderingCancelledException' ||
-      error.name === 'PromiseCancelledException'
-    ) {
+    if (isCancelException(error)) {
       return;
     }
 
-    errorOnDev(error.message, error);
+    errorOnDev(error);
+
+    const { onLoadError } = this.props;
 
     callIfDefined(
-      this.props.onLoadError,
+      onLoadError,
       error,
     );
-
-    this.setState({ outline: false });
   }
 
   onItemClick = ({ pageIndex, pageNumber }) => {
+    const { onItemClick } = this.props;
+
     callIfDefined(
-      this.props.onItemClick,
+      onItemClick,
       {
         pageIndex,
         pageNumber,
       },
     );
-  }
-
-  loadOutline(context = this.context) {
-    const { pdf } = context;
-
-    if (!pdf) {
-      throw new Error('Attempted to load an outline, but no document was specified.');
-    }
-
-    if (this.state.outline !== null) {
-      this.setState({ outline: null });
-    }
-
-    this.runningTask = makeCancellable(pdf.getOutline());
-
-    return this.runningTask.promise
-      .then(this.onLoadSuccess)
-      .catch(this.onLoadError);
   }
 
   renderOutline() {
@@ -113,9 +129,9 @@ export default class Outline extends Component {
           outline.map((item, itemIndex) => (
             <OutlineItem
               key={
-                typeof item.destination === 'string' ?
-                  item.destination :
-                  itemIndex
+                typeof item.destination === 'string'
+                  ? item.destination
+                  : itemIndex
               }
               item={item}
             />
@@ -126,40 +142,43 @@ export default class Outline extends Component {
   }
 
   render() {
-    const { pdf } = this.context;
+    const { pdf } = this.props;
     const { outline } = this.state;
 
     if (!pdf || !outline) {
       return null;
     }
 
-    const { className } = this.props;
+    const { className, inputRef } = this.props;
 
     return (
       <div
         className={mergeClassNames('react-pdf__Outline', className)}
-        ref={this.props.inputRef}
+        ref={inputRef}
         {...this.eventProps}
       >
-        {this.renderOutline()}
+        <OutlineContext.Provider value={this.childContext}>
+          {this.renderOutline()}
+        </OutlineContext.Provider>
       </div>
     );
   }
 }
 
-Outline.childContextTypes = {
-  onClick: PropTypes.func,
-};
-
-Outline.contextTypes = {
-  pdf: isPdf,
-};
-
-Outline.propTypes = {
+OutlineInternal.propTypes = {
   className: isClassName,
   inputRef: PropTypes.func,
   onItemClick: PropTypes.func,
   onLoadError: PropTypes.func,
   onLoadSuccess: PropTypes.func,
+  pdf: isPdf,
   ...eventsProps(),
 };
+
+const Outline = props => (
+  <DocumentContext.Consumer>
+    {context => <OutlineInternal {...context} {...props} />}
+  </DocumentContext.Consumer>
+);
+
+export default Outline;

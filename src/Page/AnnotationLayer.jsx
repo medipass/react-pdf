@@ -1,31 +1,43 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
+import pdfjs from 'pdfjs-dist';
+
+import DocumentContext from '../DocumentContext';
+import PageContext from '../PageContext';
 
 import {
   callIfDefined,
   cancelRunningTask,
   errorOnDev,
+  isCancelException,
   makeCancellable,
 } from '../shared/utils';
 
 import { isLinkService, isPage, isRotate } from '../shared/propTypes';
 
-export default class AnnotationLayer extends Component {
+export class AnnotationLayerInternal extends PureComponent {
   state = {
     annotations: null,
   }
 
   componentDidMount() {
-    this.getAnnotations();
+    const { page } = this.props;
+
+    if (!page) {
+      throw new Error('Attempted to load page annotations, but no page was specified.');
+    }
+
+    this.loadAnnotations();
   }
 
-  componentWillReceiveProps(nextProps, nextContext) {
-    if (nextContext.page !== this.context.page) {
-      if (this.state.annotations !== null) {
-        this.setState({ annotations: null });
-      }
+  componentDidUpdate(prevProps) {
+    const { page, renderInteractiveForms } = this.props;
 
-      this.getAnnotations(nextContext);
+    if (
+      (prevProps.page && (page !== prevProps.page))
+      || renderInteractiveForms !== prevProps.renderInteractiveForms
+    ) {
+      this.loadAnnotations();
     }
   }
 
@@ -33,76 +45,73 @@ export default class AnnotationLayer extends Component {
     cancelRunningTask(this.runningTask);
   }
 
-  onGetAnnotationsSuccess = (annotations) => {
-    callIfDefined(
-      this.context.onGetAnnotationsSuccess,
-      annotations,
-    );
+  loadAnnotations = async () => {
+    const { page } = this.props;
 
-    this.setState({ annotations });
+    try {
+      const cancellable = makeCancellable(page.getAnnotations());
+      this.runningTask = cancellable;
+      const annotations = await cancellable.promise;
+      this.setState({ annotations }, this.onLoadSuccess);
+    } catch (error) {
+      this.setState({ annotations: false });
+      this.onLoadError(error);
+    }
   }
 
-  onGetAnnotationsError = (error) => {
-    if (
-      error.name === 'RenderingCancelledException' ||
-      error.name === 'PromiseCancelledException'
-    ) {
+  onLoadSuccess = () => {
+    const { onGetAnnotationsSuccess } = this.props;
+    const { annotations } = this.state;
+
+    callIfDefined(
+      onGetAnnotationsSuccess,
+      annotations,
+    );
+  }
+
+  onLoadError = (error) => {
+    if (isCancelException(error)) {
       return;
     }
 
-    errorOnDev(error.message, error);
+    errorOnDev(error);
+
+    const { onGetAnnotationsError } = this.props;
 
     callIfDefined(
-      this.context.onGetAnnotationsError,
+      onGetAnnotationsError,
       error,
     );
-
-    this.setState({ annotations: false });
   }
 
   onRenderSuccess = () => {
-    callIfDefined(
-      this.context.onRenderAnnotationsSuccess,
-    );
+    const { onRenderAnnotationsSuccess } = this.props;
+
+    callIfDefined(onRenderAnnotationsSuccess);
   }
 
   /**
    * Called when a annotations fails to render.
    */
   onRenderError = (error) => {
-    if (
-      error.name === 'RenderingCancelledException' ||
-      error.name === 'PromiseCancelledException'
-    ) {
+    if (isCancelException(error)) {
       return;
     }
 
-    errorOnDev(error.message, error);
+    errorOnDev(error);
+
+    const { onRenderAnnotationsError } = this.props;
 
     callIfDefined(
-      this.context.onRenderError,
+      onRenderAnnotationsError,
       error,
     );
   }
 
   get viewport() {
-    const { page, rotate, scale } = this.context;
+    const { page, rotate, scale } = this.props;
 
     return page.getViewport(scale, rotate);
-  }
-
-  getAnnotations(context = this.context) {
-    const { page } = context;
-
-    if (!page) {
-      throw new Error('Attempted to load page annotations, but no page was specified.');
-    }
-
-    this.runningTask = makeCancellable(page.getAnnotations());
-
-    return this.runningTask.promise
-      .then(this.onGetAnnotationsSuccess)
-      .catch(this.onGetAnnotationsError);
   }
 
   renderAnnotations() {
@@ -112,7 +121,7 @@ export default class AnnotationLayer extends Component {
       return;
     }
 
-    const { linkService, page } = this.context;
+    const { linkService, page, renderInteractiveForms } = this.props;
     const viewport = this.viewport.clone({ dontFlip: true });
 
     const parameters = {
@@ -120,11 +129,14 @@ export default class AnnotationLayer extends Component {
       div: this.annotationLayer,
       linkService,
       page,
+      renderInteractiveForms,
       viewport,
     };
 
+    this.annotationLayer.innerHTML = '';
+
     try {
-      PDFJS.AnnotationLayer.render(parameters);
+      pdfjs.AnnotationLayer.render(parameters);
       this.onRenderSuccess();
     } catch (error) {
       this.onRenderError(error);
@@ -143,13 +155,28 @@ export default class AnnotationLayer extends Component {
   }
 }
 
-AnnotationLayer.contextTypes = {
-  linkService: isLinkService,
+AnnotationLayerInternal.propTypes = {
+  linkService: isLinkService.isRequired,
   onGetAnnotationsError: PropTypes.func,
   onGetAnnotationsSuccess: PropTypes.func,
   onRenderAnnotationsError: PropTypes.func,
   onRenderAnnotationsSuccess: PropTypes.func,
   page: isPage,
+  renderInteractiveForms: PropTypes.bool,
   rotate: isRotate,
   scale: PropTypes.number,
 };
+
+const AnnotationLayer = props => (
+  <DocumentContext.Consumer>
+    {documentContext => (
+      <PageContext.Consumer>
+        {pageContext => (
+          <AnnotationLayerInternal {...documentContext} {...pageContext} {...props} />
+        )}
+      </PageContext.Consumer>
+    )}
+  </DocumentContext.Consumer>
+);
+
+export default AnnotationLayer;

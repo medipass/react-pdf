@@ -74,9 +74,6 @@ export const isFile = (variable) => {
  */
 export const isDataURI = str => isString(str) && /^data:/.test(str);
 
-export const isParamObject = file =>
-  file instanceof Object && ('data' in file || 'range' in file || 'url' in file);
-
 export const dataURItoUint8Array = (dataURI) => {
   if (!isDataURI(dataURI)) {
     throw new Error('dataURItoUint8Array was provided with an argument which is not a valid data URI.');
@@ -123,7 +120,6 @@ export const errorOnDev = (...message) => consoleOnDev('error', ...message);
 
 export const displayCORSWarning = () => {
   if (isLocalFileSystem) {
-    // eslint-disable-next-line no-console
     warnOnDev('Loading PDF as base64 strings/URLs might not work on protocols other than HTTP/HTTPS. On Google Chrome, you can use --allow-file-access-from-files flag for debugging purposes.');
   }
 };
@@ -163,12 +159,15 @@ export const cancelRunningTask = (runningTask) => {
   runningTask.cancel();
 };
 
-export const makePageCallback = (page, scale) => ({
-  ...page,
-  // Legacy callback params
-  get width() { return page.view[2] * scale; },
-  get height() { return page.view[3] * scale; },
-  scale,
-  get originalWidth() { return page.view[2]; },
-  get originalHeight() { return page.view[3]; },
-});
+export const makePageCallback = (page, scale) => {
+  Object.defineProperty(page, 'width', { get() { return this.view[2] * scale; }, configurable: true });
+  Object.defineProperty(page, 'height', { get() { return this.view[3] * scale; }, configurable: true });
+  Object.defineProperty(page, 'originalWidth', { get() { return this.view[2]; }, configurable: true });
+  Object.defineProperty(page, 'originalHeight', { get() { return this.view[3]; }, configurable: true });
+  return page;
+};
+
+export const isCancelException = error => (
+  error.name === 'RenderingCancelledException'
+  || error.name === 'PromiseCancelledException'
+);
