@@ -1,7 +1,9 @@
 const path = require('path');
+// eslint-disable-next-line import/no-unresolved
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
+  mode: 'production',
   context: __dirname,
   devtool: 'source-map',
   entry: [
@@ -38,9 +40,8 @@ module.exports = {
       {
         test: /\.jsx?$/,
         exclude: /node_modules/,
-        use: [
-          'babel-loader',
-        ],
+        loader: 'babel-loader',
+        options: { babelrcRoots: ['.', '../'] },
       },
     ],
   },

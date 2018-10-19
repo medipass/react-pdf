@@ -103,9 +103,20 @@ Instead of directly importing/requiring `'react-pdf'`, import it like so:
 import { Document } from 'react-pdf/dist/entry.parcel';
 ```
 
+#### Create React App
+
+Create React App uses Webpack under the hood, but instructions for Webpack will not work. [Standard instructions](#browserify-and-others) apply.
+
 #### Browserify and others
 
 If you use Browserify or other bundling tools, you will have to make sure on your own that `pdf.worker.js` file from `pdfjs-dist/build` is copied to your project's output folder.
+
+Alternatively, you could use `pdf.worker.js` from an external CDN:
+
+```js
+import { pdfjs } from 'react-pdf';
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+```
 
 ### Support for annotations
 
@@ -183,6 +194,7 @@ Loads a document passed using `file` prop.
 |----|----|----|
 |className|Defines custom class name(s), that will be added to rendered element along with the default `react-pdf__Document`.|<ul><li>String:<br />`"custom-class-name-1 custom-class-name-2"`</li><li>Array of strings:<br />`["custom-class-name-1", "custom-class-name-2"]`</li></ul>|
 |error|Defines what the component should display in case of an error. Defaults to "Failed to load PDF file.".|<ul><li>String:<br />`"An error occurred!"`</li><li>React element:<br />`<div>An error occurred!</div>`</li><li>Function:<br />`this.renderError()`</li></ul>|
+|externalLinkTarget|Defines link target for external links rendered in annotations. Defaults to unset, which means that default behavior will be used.|One of valid [values for `target` attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#Attributes).<ul><li>`"_self"`</li><li>`"_blank"`</li><li>`"_parent"`</li><li>`"_top"`</li></ul>
 |file|Defines what PDF should be displayed.<br />Its value can be an URL, a file (imported using `import ... from ...` or from file input form element), or an object with parameters (`url` - URL; `data` - data, preferably Uint8Array; `range` - PDFDataRangeTransport; `httpHeaders` - custom request headers, e.g. for authorization), `withCredentials` - a boolean to indicate whether or not to include cookies in the request (defaults to `false`).|<ul><li>URL:<br />`"http://example.com/sample.pdf"`</li><li>File:<br />`import sample from '../static/sample.pdf'` and then<br />`sample`</li><li>Parameter object:<br />`{ url: 'http://example.com/sample.pdf', httpHeaders: { 'X-CustomHeader': '40359820958024350238508234' }, withCredentials: true }`</ul>|
 |inputRef|A function that behaves like ref, but it's passed to main `<div>` rendered by `<Document>` component.|`(ref) => { this.myDocument = ref; }`|
 |loading|Defines what the component should display while loading. Defaults to "Loading PDF…".|<ul><li>String:<br />`"Please wait!"`</li><li>React element:<br />`<div>Please wait!</div>`</li><li>Function:<br />`this.renderLoader()`</li></ul>|
@@ -193,7 +205,7 @@ Loads a document passed using `file` prop.
 |onSourceError|Function called in case of an error while retrieving document source from `file` prop.|`(error) => alert('Error while retreiving document source! ' + error.message)`|
 |onSourceSuccess|Function called when document source is successfully retreived from `file` prop.|`() => alert('Document source retreived!')`|
 |options|An object in which additional parameters to be passed to PDF.js can be defined. For a full list of possible parameters, check [PDF.js documentation on DocumentInitParameters](https://mozilla.github.io/pdf.js/api/draft/global.html#DocumentInitParameters).|`{ cMapUrl: 'cmaps/', cMapPacked: true }`|
-|renderMode|Defines the rendering mode of the document. Can be `canvas` or `svg`. Defaults to `canvas`.|`"svg"`
+|renderMode|Defines the rendering mode of the document. Can be `canvas`, `svg` or `none`. Defaults to `canvas`.|`"svg"`
 |rotate|Defines the rotation of the document in degrees. If provided, will change rotation globally, even for the pages which were given `rotate` prop of their own. 90 = rotated to the right, 180 = upside down, 270 = rotated to the left.|`90`|
 
 ### Page
@@ -223,9 +235,9 @@ Displays a page. Should be placed inside `<Document />`. Alternatively, it can h
 |onGetTextError|Function called in case of an error while loading text layer items.|`(error) => alert('Error while loading text layer items! ' + error.message)`|
 |pageIndex|Defines which page from PDF file should be displayed. Defaults to 0.|`0`|
 |pageNumber|Defines which page from PDF file should be displayed. If provided, `pageIndex` prop will be ignored. Defaults to 1.|`1`|
-|renderAnnotations|Defines whether annotations (e.g. links) should be rendered. Defaults to true.|`false`|
-|renderInteractiveForms|Defines whether interactive forms should be rendered. `renderAnnotations` prop must be set to `true`. Defaults to false.|`true`|
-|renderMode|Defines the rendering mode of the page. Can be `canvas` or `svg`. Defaults to `canvas`.|`"svg"`
+|renderAnnotationLayer|Defines whether annotations (e.g. links) should be rendered. Defaults to true.|`false`|
+|renderInteractiveForms|Defines whether interactive forms should be rendered. `renderAnnotationLayer` prop must be set to `true`. Defaults to false.|`true`|
+|renderMode|Defines the rendering mode of the page. Can be `canvas`, `svg` or `none`. Defaults to `canvas`.|`"svg"`
 |renderTextLayer|Defines whether a text layer should be rendered. Defaults to true.|`false`|
 |rotate|Defines the rotation of the page in degrees. 90 = rotated to the right, 180 = upside down, 270 = rotated to the left. Defaults to page's default setting, usually 0.|`90`|
 |scale|Defines the scale in which PDF file should be rendered. Defaults to 1.0.|`0.5`|
@@ -280,3 +292,17 @@ Thank you to all our sponsors! [Become a sponsor](https://opencollective.com/rea
 Thank you to all our backers! [Become a backer](https://opencollective.com/react-pdf-950#backer) and get your image on our README on GitHub.
 
 <a href="https://opencollective.com/react-pdf-950#backers" target="_blank"><img src="https://opencollective.com/react-pdf-950/backers.svg?width=890"></a>
+
+### Top Contributors
+
+Thank you to all our contributors that helped on this project!
+
+[![0](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/0)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/0)
+[![1](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/1)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/1)
+[![2](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/2)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/2)
+[![3](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/3)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/3)
+[![4](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/4)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/4)
+[![5](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/5)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/5)
+[![6](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/6)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/6)
+[![7](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/7)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/7)
+

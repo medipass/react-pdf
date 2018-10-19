@@ -1,7 +1,9 @@
 const webpack = require('webpack');
+// eslint-disable-next-line import/no-unresolved
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
+  mode: 'development',
   context: __dirname,
   devtool: 'source-map',
   entry: [
@@ -11,6 +13,7 @@ module.exports = {
   ],
   output: {
     filename: '[name].bundle.js',
+    globalObject: 'this', // See: https://github.com/webpack/webpack/issues/6642
   },
   resolve: {
     extensions: ['.js', '.jsx'],
@@ -39,9 +42,8 @@ module.exports = {
       {
         test: /\.jsx?$/,
         exclude: /node_modules/,
-        use: [
-          'babel-loader',
-        ],
+        loader: 'babel-loader',
+        options: { babelrcRoots: ['.', '../'] },
       },
     ],
   },
