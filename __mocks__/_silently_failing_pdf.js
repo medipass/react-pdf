@@ -1,7 +1,7 @@
 import { RenderingCancelledException } from 'pdfjs-dist';
 
 export default {
-  _pdfInfo: {
+  pdfInfo: {
     fingerprint: 'a62067476e69734bb8eb60122615dfbf',
     numPages: 4,
   },
