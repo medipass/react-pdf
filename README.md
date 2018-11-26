@@ -22,8 +22,8 @@ Minimal demo page is included in sample directory.
 
 React-PDF is under constant development. This documentation is written for React-PDF 4.x branch. If you want to see documentation for other versions of React-PDF, use dropdown on top of GitHub page to switch to an appropriate tag. Here are quick links to the newest docs from each branch:
 
-* [v3.x](https://github.com/wojtekmaj/react-pdf/blob/v3.0.5/README.md)
-* [v2.x](https://github.com/wojtekmaj/react-pdf/blob/v2.5.3/README.md)
+* [v3.x](https://github.com/wojtekmaj/react-pdf/blob/v3.x/README.md)
+* [v2.x](https://github.com/wojtekmaj/react-pdf/blob/v2.x/README.md)
 * [v1.x](https://github.com/wojtekmaj/react-pdf/blob/v1.8.3/README.md)
 
 ## Getting started
@@ -202,8 +202,8 @@ Loads a document passed using `file` prop.
 |onItemClick|Function called when an outline item has been clicked. Usually, you would like to use this callback to move the user wherever they requested to.|`({ pageNumber }) => alert('Clicked an item from page ' + pageNumber + '!')`|
 |onLoadError|Function called in case of an error while loading a document.|`(error) => alert('Error while loading document! ' + error.message)`|
 |onLoadSuccess|Function called when the document is successfully loaded.|`(pdf) => alert('Loaded a file with ' + pdf.numPages + ' pages!')`|
-|onSourceError|Function called in case of an error while retrieving document source from `file` prop.|`(error) => alert('Error while retreiving document source! ' + error.message)`|
-|onSourceSuccess|Function called when document source is successfully retreived from `file` prop.|`() => alert('Document source retreived!')`|
+|onSourceError|Function called in case of an error while retrieving document source from `file` prop.|`(error) => alert('Error while retrieving document source! ' + error.message)`|
+|onSourceSuccess|Function called when document source is successfully retrieved from `file` prop.|`() => alert('Document source retrieved!')`|
 |options|An object in which additional parameters to be passed to PDF.js can be defined. For a full list of possible parameters, check [PDF.js documentation on DocumentInitParameters](https://mozilla.github.io/pdf.js/api/draft/global.html#DocumentInitParameters).|`{ cMapUrl: 'cmaps/', cMapPacked: true }`|
 |renderMode|Defines the rendering mode of the document. Can be `canvas`, `svg` or `none`. Defaults to `canvas`.|`"svg"`
 |rotate|Defines the rotation of the document in degrees. If provided, will change rotation globally, even for the pages which were given `rotate` prop of their own. 90 = rotated to the right, 180 = upside down, 270 = rotated to the left.|`90`|
@@ -253,8 +253,8 @@ Displays an outline (table of contents). Should be placed inside `<Document />`.
 |----|----|----|
 |className|Defines custom class name(s), that will be added to rendered element along with the default `react-pdf__Outline`.|<ul><li>String:<br />`"custom-class-name-1 custom-class-name-2"`</li><li>Array of strings:<br />`["custom-class-name-1", "custom-class-name-2"]`</li></ul>|
 |onItemClick|Function called when an outline item has been clicked. Usually, you would like to use this callback to move the user wherever they requested to.|`({ pageNumber }) => alert('Clicked an item from page ' + pageNumber + '!')`|
-|onLoadError|Function called in case of an error while retreiving the outline.|`(error) => alert('Error while retreiving the outline! ' + error.message)`|
-|onLoadSuccess|Function called when the outline is successfully retreived.|`() => alert('The outline has been successfully retreived.')`|
+|onLoadError|Function called in case of an error while retrieving the outline.|`(error) => alert('Error while retrieving the outline! ' + error.message)`|
+|onLoadSuccess|Function called when the outline is successfully retrieved.|`() => alert('The outline has been successfully retrieved.')`|
 |onParseError|Function called in case of an error while parsing the outline.|`(error) => alert('Error while parsing the outline! ' + error.message)`|
 |onParseSuccess|Function called when the outline is successfully parsed.|`({ outline }) => alert('There are ' + outline.length + ' top level items in the table of contents.')`|
 
@@ -297,12 +297,4 @@ Thank you to all our backers! [Become a backer](https://opencollective.com/react
 
 Thank you to all our contributors that helped on this project!
 
-[![0](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/0)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/0)
-[![1](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/1)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/1)
-[![2](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/2)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/2)
-[![3](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/3)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/3)
-[![4](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/4)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/4)
-[![5](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/5)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/5)
-[![6](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/6)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/6)
-[![7](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/images/7)](https://sourcerer.io/fame/wojtekmaj/wojtekmaj/react-pdf/links/7)
-
+![Top Contributors](https://opencollective.com/react-pdf/contributors.svg?width=890&button=false)

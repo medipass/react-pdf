@@ -5,9 +5,6 @@ import PageContext from '../PageContext';
 
 import { isPage, isRotate } from '../shared/propTypes';
 
-// Render disproportion above which font will be considered broken and fallback will be used
-const BROKEN_FONT_ALARM_THRESHOLD = 0.1;
-
 export class TextLayerItemInternal extends PureComponent {
   componentDidMount() {
     this.alignTextItem();
@@ -65,39 +62,33 @@ export class TextLayerItemInternal extends PureComponent {
     return defaultSideways ? y - xMin : x - xMin;
   }
 
-  async getFontData(fontFamily) {
+  async getFontData(fontName) {
     const { page } = this.props;
 
-    const font = await page.commonObjs.ensureObj(fontFamily);
+    const font = await page.commonObjs.ensureObj(fontName);
 
     return font.data;
   }
 
   async alignTextItem() {
     const { page } = this.props;
+    const element = this.item;
 
-    if (!this.item) {
+    if (!element) {
       return;
     }
 
-    const element = this.item;
     element.style.transform = '';
 
     const { fontName, scale, width } = this.props;
-    const targetWidth = width * scale;
 
     const fontData = await this.getFontData(fontName);
 
-    let actualWidth = this.getElementWidth(element);
-    const widthDisproportion = Math.abs((targetWidth / actualWidth) - 1);
+    const fallbackFontName = fontData ? fontData.fallbackName : 'sans-serif';
+    element.style.fontFamily = `${fontName}, ${fallbackFontName}`;
 
-    const repairsNeeded = widthDisproportion > BROKEN_FONT_ALARM_THRESHOLD;
-    if (repairsNeeded) {
-      const fallbackFontName = fontData ? fontData.fallbackName : 'sans-serif';
-      element.style.fontFamily = fallbackFontName;
-
-      actualWidth = this.getElementWidth(element);
-    }
+    const targetWidth = width * scale;
+    const actualWidth = this.getElementWidth(element);
 
     const ascent = fontData ? fontData.ascent : 1;
 
