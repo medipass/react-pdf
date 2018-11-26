@@ -25,10 +25,10 @@ describe('Document', () => {
 
   beforeAll(async () => {
     const pdf = await pdfjs.getDocument({ data: pdfFile.arrayBuffer });
-    desiredLoadedPdf.pdfInfo = pdf.pdfInfo;
+    desiredLoadedPdf._pdfInfo = pdf._pdfInfo;
 
     const pdf2 = await pdfjs.getDocument({ data: pdfFile2.arrayBuffer });
-    desiredLoadedPdf2.pdfInfo = pdf2.pdfInfo;
+    desiredLoadedPdf2._pdfInfo = pdf2._pdfInfo;
   });
 
   describe('loading', () => {
@@ -225,6 +225,9 @@ describe('Document', () => {
 
       expect.assertions(2);
       return onLoadSuccessPromise.then(() => {
+        // Since the pdf loads automatically, we need to simulate its loading state
+        component.setState({ pdf: null });
+
         const loading = component.find('Message');
 
         expect(loading).toHaveLength(1);
@@ -245,6 +248,9 @@ describe('Document', () => {
 
       expect.assertions(2);
       return onLoadSuccessPromise.then(() => {
+        // Since the pdf loads automatically, we need to simulate its loading state
+        component.setState({ pdf: null });
+
         const loading = component.find('Message');
 
         expect(loading).toHaveLength(1);
@@ -388,6 +394,87 @@ describe('Document', () => {
         expect(child.prop('rotate')).toBe(180);
       });
     });
+  });
+
+  describe('viewer', () => {
+    it('calls onItemClick if defined', () => {
+      const { func: onLoadSuccess, promise: onLoadSuccessPromise } = makeAsyncCallback();
+
+      const onItemClick = jest.fn();
+
+      const component = shallow(
+        <Document
+          file={pdfFile.file}
+          onItemClick={onItemClick}
+          onLoadSuccess={onLoadSuccess}
+        />
+      );
+
+      expect.assertions(2);
+      return onLoadSuccessPromise.then(() => {
+        const pageNumber = 6;
+
+        // Simulate clicking on an outline item
+        component.instance().viewer.scrollPageIntoView({ pageNumber });
+
+        expect(onItemClick).toHaveBeenCalledTimes(1);
+        expect(onItemClick).toHaveBeenCalledWith({ pageNumber });
+      });
+    });
+
+    it('attempts to find a page and scroll it into view if onItemClick is not given', () => {
+      const { func: onLoadSuccess, promise: onLoadSuccessPromise } = makeAsyncCallback();
+
+      const component = shallow(
+        <Document
+          file={pdfFile.file}
+          onLoadSuccess={onLoadSuccess}
+        />
+      );
+
+      expect.assertions(1);
+      return onLoadSuccessPromise.then(() => {
+        const scrollIntoView = jest.fn();
+        const pageNumber = 6;
+
+        // Register fake page in Document viewer
+        component.instance().pages[pageNumber - 1] = { scrollIntoView };
+
+        // Simulate clicking on an outline item
+        component.instance().viewer.scrollPageIntoView({ pageNumber });
+
+        expect(scrollIntoView).toHaveBeenCalledTimes(1);
+      });
+    });
+  });
+
+  describe('linkService', () => {
+    /* eslint-disable indent */
+    it.each`
+      externalLinkTarget | linkServiceTarget
+      ${null}            | ${0}
+      ${'_self'}         | ${1}
+      ${'_blank'}        | ${2}
+      ${'_parent'}       | ${3}
+      ${'_top'}          | ${4}
+    `('returns externalLinkTarget = $linkServiceTarget given externalLinkTarget prop = $externalLinkTarget',
+    ({ externalLinkTarget, linkServiceTarget }) => {
+      const { func: onLoadSuccess, promise: onLoadSuccessPromise } = makeAsyncCallback();
+
+      const component = shallow(
+        <Document
+          externalLinkTarget={externalLinkTarget}
+          file={pdfFile.file}
+          onLoadSuccess={onLoadSuccess}
+        />
+      );
+
+      expect.assertions(1);
+      return onLoadSuccessPromise.then(() => {
+        expect(component.instance().linkService.externalLinkTarget).toBe(linkServiceTarget);
+      });
+    });
+    /* eslint-enable indent */
   });
 
   it('calls onClick callback when clicked a page (sample of mouse events family)', () => {

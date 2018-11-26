@@ -91,8 +91,8 @@ export class PageInternal extends PureComponent {
       onGetAnnotationsSuccess,
       onGetTextError,
       onGetTextSuccess,
-      onRenderAnnotationsError,
-      onRenderAnnotationsSuccess,
+      onRenderAnnotationLayerError,
+      onRenderAnnotationLayerSuccess,
       onRenderError,
       onRenderSuccess,
       renderInteractiveForms,
@@ -104,8 +104,8 @@ export class PageInternal extends PureComponent {
       onGetAnnotationsSuccess,
       onGetTextError,
       onGetTextSuccess,
-      onRenderAnnotationsError,
-      onRenderAnnotationsSuccess,
+      onRenderAnnotationLayerError,
+      onRenderAnnotationLayerSuccess,
       onRenderError,
       onRenderSuccess,
       page,
@@ -277,6 +277,24 @@ export class PageInternal extends PureComponent {
     }
   }
 
+  renderMainLayer() {
+    const { renderMode } = this.props;
+
+    switch (renderMode) {
+      case 'none':
+        return null;
+      case 'svg':
+        return (
+          <PageSVG key={`${this.pageKeyNoScale}_svg`} />
+        );
+      case 'canvas':
+      default:
+        return (
+          <PageCanvas key={`${this.pageKey}_canvas`} />
+        );
+    }
+  }
+
   renderTextLayer() {
     const { renderTextLayer } = this.props;
 
@@ -289,50 +307,34 @@ export class PageInternal extends PureComponent {
     );
   }
 
-  renderAnnotations() {
-    const { renderAnnotations } = this.props;
+  renderAnnotationLayer() {
+    const { renderAnnotationLayer } = this.props;
 
-    if (!renderAnnotations) {
+    if (!renderAnnotationLayer) {
       return null;
     }
+
+    /**
+     * As of now, PDF.js 2.0.943 returns warnings on unimplemented annotations in SVG mode.
+     * Therefore, as a fallback, we render "traditional" AnnotationLayer component.
+     */
 
     return (
       <AnnotationLayer key={`${this.pageKey}_annotations`} />
     );
   }
 
-  renderSVG() {
-    return [
-      <PageSVG key={`${this.pageKeyNoScale}_svg`} />,
-      /**
-       * As of now, PDF.js 2.0.474 returns warnings on unimplemented annotations.
-       * Therefore, as a fallback, we render "traditional" AnnotationLayer component.
-       */
-      this.renderAnnotations(),
-    ];
-  }
-
-  renderCanvas() {
-    return [
-      <PageCanvas key={`${this.pageKey}_canvas`} />,
-      this.renderTextLayer(),
-      this.renderAnnotations(),
-    ];
-  }
-
   renderChildren() {
     const {
       children,
-      renderMode,
     } = this.props;
+
 
     return (
       <PageContext.Provider value={this.childContext}>
-        {
-          renderMode === 'svg'
-            ? this.renderSVG()
-            : this.renderCanvas()
-        }
+        {this.renderMainLayer()}
+        {this.renderTextLayer()}
+        {this.renderAnnotationLayer()}
         {children}
       </PageContext.Provider>
     );
@@ -405,7 +407,7 @@ PageInternal.defaultProps = {
   error: 'Failed to load the page.',
   loading: 'Loading page…',
   noData: 'No page specified.',
-  renderAnnotations: true,
+  renderAnnotationLayer: true,
   renderInteractiveForms: false,
   renderMode: 'canvas',
   renderTextLayer: true,
@@ -431,7 +433,7 @@ PageInternal.propTypes = {
   pageNumber: isPageNumber,
   pdf: isPdf,
   registerPage: PropTypes.func,
-  renderAnnotations: PropTypes.bool,
+  renderAnnotationLayer: PropTypes.bool,
   renderInteractiveForms: PropTypes.bool,
   renderMode: isRenderMode,
   renderTextLayer: PropTypes.bool,
@@ -444,7 +446,18 @@ PageInternal.propTypes = {
 
 const Page = props => (
   <DocumentContext.Consumer>
-    {context => <PageInternal {...context} {...props} />}
+    {context => (
+      <PageInternal
+        {...context}
+        {...props}
+        // For backwards compatibility
+        renderAnnotationLayer={
+          typeof props.renderAnnotationLayer !== 'undefined'
+            ? props.renderAnnotationLayer
+            : props.renderAnnotations
+        }
+      />
+    )}
   </DocumentContext.Consumer>
 );
 

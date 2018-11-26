@@ -2,22 +2,21 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 
 export default class ViewOptions extends PureComponent {
-  onRenderAnnotationsChange = event =>
-    this.props.setState({ renderAnnotations: event.target.checked })
+  onRenderModeChange = (event) => {
+    const { setState } = this.props;
 
-  onRenderInteractiveFormsChange = event =>
-    this.props.setState({ renderInteractiveForms: event.target.checked })
+    setState({ renderMode: event.target.value });
+  }
 
-  onRenderModeChange = event =>
-    this.props.setState({ renderMode: event.target.value })
+  onDisplayAllChange = (event) => {
+    const { setState } = this.props;
 
-  onRenderTextLayersChange = event =>
-    this.props.setState({ renderTextLayer: event.target.checked })
-
-  onDisplayAllChange = event =>
-    this.props.setState({ displayAll: event.target.checked })
+    setState({ displayAll: event.target.checked });
+  }
 
   onPageHeightChange = (event) => {
+    const { setState } = this.props;
+
     event.preventDefault();
 
     const form = event.target;
@@ -27,12 +26,14 @@ export default class ViewOptions extends PureComponent {
       return;
     }
 
-    this.props.setState({
+    setState({
       pageHeight: parseInt(height, 10),
     });
   }
 
   onPageScaleChange = (event) => {
+    const { setState } = this.props;
+
     event.preventDefault();
 
     const form = event.target;
@@ -42,12 +43,14 @@ export default class ViewOptions extends PureComponent {
       return;
     }
 
-    this.props.setState({
+    setState({
       pageScale: parseFloat(scale),
     });
   }
 
   onPageWidthChange = (event) => {
+    const { setState } = this.props;
+
     event.preventDefault();
 
     const form = event.target;
@@ -57,7 +60,7 @@ export default class ViewOptions extends PureComponent {
       return;
     }
 
-    this.props.setState({
+    setState({
       pageWidth: parseInt(width, 10),
     });
   }
@@ -67,14 +70,28 @@ export default class ViewOptions extends PureComponent {
   rotateRight = () => this.changeRotation(90);
 
   changeRotation(by) {
-    this.props.setState(prevState => ({ rotate: (prevState.rotate + by + 360) % 360 }));
+    const { setState } = this.props;
+
+    setState(prevState => ({ rotate: (prevState.rotate + by + 360) % 360 }));
   }
 
-  resetRotation = () => this.props.setState({ rotate: null })
+  resetRotation = () => {
+    const { setState } = this.props;
 
-  resetHeight = () => this.props.setState({ pageHeight: null })
+    setState({ rotate: null });
+  }
 
-  resetWidth = () => this.props.setState({ pageWidth: null })
+  resetHeight = () => {
+    const { setState } = this.props;
+
+    setState({ pageHeight: null });
+  }
+
+  resetWidth = () => {
+    const { setState } = this.props;
+
+    setState({ pageWidth: null });
+  }
 
   render() {
     const {
@@ -82,26 +99,29 @@ export default class ViewOptions extends PureComponent {
       pageHeight,
       pageScale,
       pageWidth,
-      renderAnnotations,
-      renderInteractiveForms,
       renderMode,
-      renderTextLayer,
       rotate,
     } = this.props;
 
     return (
       <fieldset id="viewoptions">
-        <legend htmlFor="viewoptions">View options</legend>
+        <legend htmlFor="viewoptions">
+          View options
+        </legend>
 
         <form onSubmit={this.onPageWidthChange}>
-          <label htmlFor="pageWidth">Page width:</label>&nbsp;
+          <label htmlFor="pageWidth">
+            Page width:
+          </label>
+          &nbsp;
           <input
             type="number"
             min={0}
             id="pageWidth"
             name="pageWidth"
             defaultValue={pageWidth}
-          />&nbsp;
+          />
+          &nbsp;
           <button
             style={{ display: 'none' }}
             type="submit"
@@ -118,14 +138,18 @@ export default class ViewOptions extends PureComponent {
         </form>
 
         <form onSubmit={this.onPageHeightChange}>
-          <label htmlFor="pageHeight">Page height:</label>&nbsp;
+          <label htmlFor="pageHeight">
+            Page height:
+          </label>
+          &nbsp;
           <input
             type="number"
             min={0}
             id="pageHeight"
             name="pageHeight"
             defaultValue={pageHeight}
-          />&nbsp;
+          />
+          &nbsp;
           <button
             style={{ display: 'none' }}
             type="submit"
@@ -142,7 +166,10 @@ export default class ViewOptions extends PureComponent {
         </form>
 
         <form onSubmit={this.onPageScaleChange}>
-          <label htmlFor="pageScale">Page scale:</label>&nbsp;
+          <label htmlFor="pageScale">
+            Page scale:
+          </label>
+          &nbsp;
           <input
             type="number"
             min={0}
@@ -150,7 +177,8 @@ export default class ViewOptions extends PureComponent {
             name="pageScale"
             step="0.01"
             defaultValue={pageScale}
-          />&nbsp;
+          />
+          &nbsp;
           <button
             style={{ display: 'none' }}
             type="submit"
@@ -166,7 +194,22 @@ export default class ViewOptions extends PureComponent {
           </button>
         </form>
 
-        <label htmlFor="renderMode">Render mode:</label>
+        <label htmlFor="renderMode">
+          Render mode:
+        </label>
+        <div>
+          <input
+            checked={renderMode === 'none'}
+            id="renderNone"
+            name="renderMode"
+            onChange={this.onRenderModeChange}
+            type="radio"
+            value="none"
+          />
+          <label htmlFor="renderNone">
+            None
+          </label>
+        </div>
         <div>
           <input
             checked={!renderMode || (renderMode === 'canvas')}
@@ -176,7 +219,9 @@ export default class ViewOptions extends PureComponent {
             type="radio"
             value="canvas"
           />
-          <label htmlFor="renderCanvas">Canvas</label>
+          <label htmlFor="renderCanvas">
+            Canvas
+          </label>
         </div>
         <div>
           <input
@@ -187,51 +232,38 @@ export default class ViewOptions extends PureComponent {
             type="radio"
             value="svg"
           />
-          <label htmlFor="renderSVG">SVG</label>
+          <label htmlFor="renderSVG">
+            SVG
+          </label>
         </div>
 
         <div>
-          <input
-            id="renderTextLayer"
-            type="checkbox"
-            checked={renderMode === 'canvas' && renderTextLayer}
-            disabled={renderMode !== 'canvas'}
-            onChange={this.onRenderTextLayersChange}
-          />
-          <label htmlFor="renderTextLayer">Render text layers</label>
-        </div>
-
-        <div>
-          <input
-            id="renderAnnotations"
-            type="checkbox"
-            checked={renderAnnotations}
-            onChange={this.onRenderAnnotationsChange}
-          />
-          <label htmlFor="renderAnnotations">Render annotations</label>
-        </div>
-
-        <div>
-          <input
-            id="renderInteractiveForms"
-            type="checkbox"
-            checked={renderInteractiveForms}
-            onChange={this.onRenderInteractiveFormsChange}
-          />
-          <label htmlFor="renderInteractiveForms">Render interactive forms</label>
-        </div>
-
-        <div>
-          <label htmlFor="rotation">Rotation:</label>
+          <label htmlFor="rotation">
+            Rotation:
+          </label>
           <input
             id="rotation"
             style={{ width: '42px' }}
             type="number"
             value={rotate !== null ? rotate : ''}
-          />&nbsp;
-          <button onClick={this.rotateLeft}>Rotate left</button>&nbsp;
-          <button onClick={this.rotateRight}>Rotate right</button>&nbsp;
+          />
+          &nbsp;
           <button
+            type="button"
+            onClick={this.rotateLeft}
+          >
+            Rotate left
+          </button>
+          &nbsp;
+          <button
+            type="button"
+            onClick={this.rotateRight}
+          >
+            Rotate right
+          </button>
+          &nbsp;
+          <button
+            type="button"
             disabled={rotate === null}
             onClick={this.resetRotation}
           >
@@ -245,7 +277,9 @@ export default class ViewOptions extends PureComponent {
           onChange={this.onDisplayAllChange}
           checked={displayAll}
         />
-        <label htmlFor="displayAll">View all pages</label>
+        <label htmlFor="displayAll">
+          View all pages
+        </label>
       </fieldset>
     );
   }
@@ -256,10 +290,7 @@ ViewOptions.propTypes = {
   pageHeight: PropTypes.number,
   pageScale: PropTypes.number,
   pageWidth: PropTypes.number,
-  renderAnnotations: PropTypes.bool,
-  renderInteractiveForms: PropTypes.bool,
-  renderMode: PropTypes.oneOf(['canvas', 'svg']),
-  renderTextLayer: PropTypes.bool,
+  renderMode: PropTypes.oneOf(['canvas', 'none', 'svg']),
   rotate: PropTypes.number,
   setState: PropTypes.func.isRequired,
 };

@@ -35,17 +35,17 @@ describe('Page', () => {
 
     const page = await pdf.getPage(1);
     desiredLoadedPage.pageIndex = page.pageIndex;
-    desiredLoadedPage.pageInfo = page.pageInfo;
+    desiredLoadedPage._pageInfo = page._pageInfo;
 
     const page2 = await pdf.getPage(2);
     desiredLoadedPage2.pageIndex = page2.pageIndex;
-    desiredLoadedPage2.pageInfo = page2.pageInfo;
+    desiredLoadedPage2._pageInfo = page2._pageInfo;
 
     pdf2 = await pdfjs.getDocument({ data: pdfFile2.arrayBuffer });
 
     const page3 = await pdf2.getPage(1);
     desiredLoadedPage3.pageIndex = page3.pageIndex;
-    desiredLoadedPage3.pageInfo = page3.pageInfo;
+    desiredLoadedPage3._pageInfo = page3._pageInfo;
 
     registerPageArguments.push(
       page.pageIndex,
@@ -309,6 +309,9 @@ describe('Page', () => {
 
       expect.assertions(2);
       return onLoadSuccessPromise.then(() => {
+        // Since the page loads automatically, we need to simulate its loading state
+        component.setState({ page: null });
+
         const loading = component.find('Message');
 
         expect(loading).toHaveLength(1);
@@ -330,6 +333,9 @@ describe('Page', () => {
 
       expect.assertions(2);
       return onLoadSuccessPromise.then(() => {
+        // Since the page loads automatically, we need to simulate its loading state
+        component.setState({ page: null });
+
         const loading = component.find('Message');
 
         expect(loading).toHaveLength(1);
@@ -409,6 +415,28 @@ describe('Page', () => {
       });
     });
 
+    it('requests page not to be rendered when given renderMode = "none"', () => {
+      const { func: onLoadSuccess, promise: onLoadSuccessPromise } = makeAsyncCallback();
+
+      const component = shallow(
+        <Page
+          onLoadSuccess={onLoadSuccess}
+          pageIndex={0}
+          pdf={pdf}
+          renderMode="none"
+        />
+      );
+
+      expect.assertions(2);
+      return onLoadSuccessPromise.then(() => {
+        component.update();
+        const pageCanvas = component.find('PageCanvas');
+        const pageSVG = component.find('PageSVG');
+        expect(pageCanvas).toHaveLength(0);
+        expect(pageSVG).toHaveLength(0);
+      });
+    });
+
     it('requests page to be rendered in canvas mode when given renderMode = "canvas"', () => {
       const { func: onLoadSuccess, promise: onLoadSuccessPromise } = makeAsyncCallback();
 
@@ -444,8 +472,8 @@ describe('Page', () => {
       expect.assertions(1);
       return onLoadSuccessPromise.then(() => {
         component.update();
-        const pageCanvas = component.find('PageSVG');
-        expect(pageCanvas).toHaveLength(1);
+        const pageSVG = component.find('PageSVG');
+        expect(pageSVG).toHaveLength(1);
       });
     });
 
@@ -508,7 +536,28 @@ describe('Page', () => {
       });
     });
 
-    it('does not render TextLayer when given renderMode = "svg"', () => {
+    it('renders TextLayer when given renderMode = "canvas"', () => {
+      const { func: onLoadSuccess, promise: onLoadSuccessPromise } = makeAsyncCallback();
+
+      const component = shallow(
+        <Page
+          onLoadSuccess={onLoadSuccess}
+          pageIndex={0}
+          pdf={pdf}
+          renderMode="canvas"
+          renderTextLayer
+        />
+      );
+
+      expect.assertions(1);
+      return onLoadSuccessPromise.then(() => {
+        component.update();
+        const textLayer = component.find('TextLayer');
+        expect(textLayer).toHaveLength(1);
+      });
+    });
+
+    it('renders TextLayer when given renderMode = "svg"', () => {
       const { func: onLoadSuccess, promise: onLoadSuccessPromise } = makeAsyncCallback();
 
       const component = shallow(
@@ -525,7 +574,7 @@ describe('Page', () => {
       return onLoadSuccessPromise.then(() => {
         component.update();
         const textLayer = component.find('TextLayer');
-        expect(textLayer).toHaveLength(0);
+        expect(textLayer).toHaveLength(1);
       });
     });
 
@@ -548,7 +597,7 @@ describe('Page', () => {
       });
     });
 
-    it('requests annotations to be rendered when given renderAnnotations = true', () => {
+    it('requests annotations to be rendered when given renderAnnotationLayer = true', () => {
       const { func: onLoadSuccess, promise: onLoadSuccessPromise } = makeAsyncCallback();
 
       const component = shallow(
@@ -556,7 +605,7 @@ describe('Page', () => {
           onLoadSuccess={onLoadSuccess}
           pageIndex={0}
           pdf={pdf}
-          renderAnnotations
+          renderAnnotationLayer
         />
       );
 
@@ -568,7 +617,7 @@ describe('Page', () => {
       });
     });
 
-    it('does not request annotations to be rendered when given renderAnnotations = false', () => {
+    it('does not request annotations to be rendered when given renderAnnotationLayer = false', () => {
       const { func: onLoadSuccess, promise: onLoadSuccessPromise } = makeAsyncCallback();
 
       const component = shallow(
@@ -576,7 +625,7 @@ describe('Page', () => {
           onLoadSuccess={onLoadSuccess}
           pageIndex={0}
           pdf={pdf}
-          renderAnnotations={false}
+          renderAnnotationLayer={false}
         />
       );
 

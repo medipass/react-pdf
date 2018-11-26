@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import once from 'lodash.once';
-import { mouseEvents, touchEvents } from 'make-event-props';
+import { mouseEvents, touchEvents, keyboardEvents } from 'make-event-props';
 
 import { isDefined } from './utils';
 
@@ -9,7 +9,7 @@ import LinkService from '../LinkService';
 export const eventsProps = once(() => {
   const eventProps = {};
 
-  [...mouseEvents, ...touchEvents].forEach((eventName) => {
+  [...mouseEvents, ...touchEvents, ...keyboardEvents].forEach((eventName) => {
     eventProps[eventName] = PropTypes.func;
   });
 
@@ -43,6 +43,8 @@ export const isFile = PropTypes.oneOfType(fileTypes);
 
 export const isLinkService = PropTypes.instanceOf(LinkService);
 
+export const isLinkTarget = PropTypes.oneOf(['_self', '_blank', '_parent', '_top']);
+
 export const isPage = PropTypes.shape({
   commonObjs: PropTypes.shape({
     objs: PropTypes.object.isRequired,
@@ -72,7 +74,7 @@ export const isPageIndex = (props, propName, componentName) => {
       return new Error(`Expected \`${propName}\` to be greater or equal to 0.`);
     }
 
-    const { numPages } = pdf.pdfInfo;
+    const { numPages } = pdf;
 
     if (pageIndex + 1 > numPages) {
       return new Error(`Expected \`${propName}\` to be less or equal to ${numPages - 1}.`);
@@ -101,7 +103,7 @@ export const isPageNumber = (props, propName, componentName) => {
       return new Error(`Expected \`${propName}\` to be greater or equal to 1.`);
     }
 
-    const { numPages } = pdf.pdfInfo;
+    const { numPages } = pdf;
 
     if (pageNumber > numPages) {
       return new Error(`Expected \`${propName}\` to be less or equal to ${numPages}.`);
@@ -124,6 +126,6 @@ export const isPdf = PropTypes.oneOfType([
   PropTypes.bool,
 ]);
 
-export const isRenderMode = PropTypes.oneOf(['canvas', 'svg']);
+export const isRenderMode = PropTypes.oneOf(['canvas', 'none', 'svg']);
 
 export const isRotate = PropTypes.oneOf([0, 90, 180, 270]);

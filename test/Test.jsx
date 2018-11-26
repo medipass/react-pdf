@@ -1,9 +1,13 @@
 import React, { PureComponent } from 'react';
+// eslint-disable-next-line import/no-unresolved
 import { Document, Outline, Page } from 'react-pdf/src/entry.webpack';
+// eslint-disable-next-line import/no-unresolved
 import 'react-pdf/src/Page/AnnotationLayer.css';
 
 import './Test.less';
 
+import AnnotationOptions from './AnnotationOptions';
+import LayerOptions from './LayerOptions';
 import LoadingOptions from './LoadingOptions';
 import ViewOptions from './ViewOptions';
 
@@ -19,6 +23,7 @@ const options = {
 export default class Test extends PureComponent {
   state = {
     displayAll: false,
+    externalLinkTarget: null,
     file: null,
     numPages: null,
     pageHeight: null,
@@ -27,7 +32,7 @@ export default class Test extends PureComponent {
     pageWidth: null,
     passMethod: 'normal',
     render: true,
-    renderAnnotations: true,
+    renderAnnotationLayer: true,
     renderInteractiveForms: true,
     renderMode: 'canvas',
     renderTextLayer: true,
@@ -47,11 +52,9 @@ export default class Test extends PureComponent {
     });
   }
 
-  onPageRenderSuccess = page =>
-    console.log('Rendered a page', page);
+  onPageRenderSuccess = page => console.log('Rendered a page', page);
 
-  onItemClick = ({ pageNumber }) =>
-    this.setState({ pageNumber })
+  onItemClick = ({ pageNumber }) => this.setState({ pageNumber })
 
   setFile = file => this.setState({ file })
 
@@ -59,18 +62,20 @@ export default class Test extends PureComponent {
 
   nextPage = () => this.changePage(1)
 
-  changePage = offset =>
-    this.setState(prevState => ({
-      pageNumber: (prevState.pageNumber || 1) + offset,
-    }))
+  changePage = offset => this.setState(prevState => ({
+    pageNumber: (prevState.pageNumber || 1) + offset,
+  }))
 
   get file() {
     const { file } = this.state;
+
     if (!file) {
       return null;
     }
 
-    switch (this.state.passMethod) {
+    const { passMethod } = this.state;
+
+    switch (passMethod) {
       case 'object': {
         if (typeof file === 'string') {
           return {
@@ -95,7 +100,7 @@ export default class Test extends PureComponent {
       pageHeight,
       pageScale,
       pageWidth,
-      renderAnnotations,
+      renderAnnotationLayer,
       renderInteractiveForms,
       renderMode,
       renderTextLayer,
@@ -106,7 +111,7 @@ export default class Test extends PureComponent {
       height: pageHeight,
       onClick: (event, page) => console.log('Clicked a page', { event, page }),
       onRenderSuccess: this.onPageRenderSuccess,
-      renderAnnotations,
+      renderAnnotationLayer,
       renderInteractiveForms,
       renderMode,
       renderTextLayer,
@@ -116,10 +121,14 @@ export default class Test extends PureComponent {
         textItem.str
           .split('ipsum')
           .reduce((strArray, currentValue, currentIndex) => (
-            currentIndex === 0 ?
-              ([...strArray, currentValue]) :
-              // eslint-disable-next-line react/no-array-index-key
-              ([...strArray, <mark key={currentIndex}>ipsum</mark>, currentValue])
+            currentIndex === 0
+              ? ([...strArray, currentValue])
+              : ([...strArray, (
+                // eslint-disable-next-line react/no-array-index-key
+                <mark key={currentIndex}>
+                  ipsum
+                </mark>
+              ), currentValue])
           ), [])
       ),
     };
@@ -128,6 +137,8 @@ export default class Test extends PureComponent {
   render() {
     const {
       displayAll,
+      externalLinkTarget,
+      file: fileState,
       numPages,
       pageHeight,
       pageNumber,
@@ -135,7 +146,7 @@ export default class Test extends PureComponent {
       pageWidth,
       passMethod,
       render,
-      renderAnnotations,
+      renderAnnotationLayer,
       renderInteractiveForms,
       renderMode,
       renderTextLayer,
@@ -146,6 +157,7 @@ export default class Test extends PureComponent {
     const setState = state => this.setState(state);
 
     const documentProps = {
+      externalLinkTarget,
       file,
       options,
     };
@@ -153,14 +165,23 @@ export default class Test extends PureComponent {
     return (
       <div className="Test">
         <header>
-          <h1>react-pdf test page</h1>
+          <h1>
+            react-pdf test page
+          </h1>
         </header>
         <div className="Test__container">
           <aside className="Test__container__options">
             <LoadingOptions
-              file={this.state.file}
+              file={fileState}
               passMethod={passMethod}
               setFile={this.setFile}
+              setState={setState}
+            />
+            <LayerOptions
+              renderAnnotationLayer={renderAnnotationLayer}
+              renderInteractiveForms={renderInteractiveForms}
+              renderMode={renderMode}
+              renderTextLayer={renderTextLayer}
               setState={setState}
             />
             <ViewOptions
@@ -168,86 +189,90 @@ export default class Test extends PureComponent {
               pageHeight={pageHeight}
               pageScale={pageScale}
               pageWidth={pageWidth}
-              renderAnnotations={renderAnnotations}
-              renderInteractiveForms={renderInteractiveForms}
               renderMode={renderMode}
-              renderTextLayer={renderTextLayer}
               rotate={rotate}
+              setState={setState}
+            />
+            <AnnotationOptions
+              externalLinkTarget={externalLinkTarget}
               setState={setState}
             />
           </aside>
           <main className="Test__container__content">
             <div className="Test__container__content__toc">
-              {
-                render &&
-                  <Document
-                    {...documentProps}
-                    className="custom-classname-document"
-                  >
-                    <Outline
-                      className="custom-classname-outline"
-                      onItemClick={this.onItemClick}
-                    />
-                  </Document>
-              }
+              {render && (
+                <Document
+                  {...documentProps}
+                  className="custom-classname-document"
+                >
+                  <Outline
+                    className="custom-classname-outline"
+                    onItemClick={this.onItemClick}
+                  />
+                </Document>
+              )}
             </div>
             <div className="Test__container__content__document">
-              {
-                render &&
-                  <Document
-                    {...documentProps}
-                    className="custom-classname-document"
-                    onItemClick={this.onItemClick}
-                    onClick={(event, pdf) => console.log('Clicked a document', { event, pdf })}
-                    onLoadProgress={this.onDocumentLoadProgress}
-                    onLoadSuccess={this.onDocumentLoadSuccess}
-                    onLoadError={this.onDocumentLoadError}
-                    onSourceError={this.onDocumentLoadError}
-                    rotate={rotate}
-                  >
-                    {
-                      displayAll ?
-                        Array.from(
-                          new Array(numPages),
-                          (el, index) => (
-                            <Page
-                              {...pageProps}
-                              inputRef={
-                                (pageNumber === index + 1) ?
-                                  (ref => ref && ref.scrollIntoView()) :
-                                  null
-                              }
-                              key={`page_${index + 1}`}
-                              pageNumber={index + 1}
-                            />
-                          ),
-                        ) :
+              {render && (
+                <Document
+                  {...documentProps}
+                  className="custom-classname-document"
+                  onItemClick={this.onItemClick}
+                  onClick={(event, pdf) => console.log('Clicked a document', { event, pdf })}
+                  onLoadProgress={this.onDocumentLoadProgress}
+                  onLoadSuccess={this.onDocumentLoadSuccess}
+                  onLoadError={this.onDocumentLoadError}
+                  onSourceError={this.onDocumentLoadError}
+                  rotate={rotate}
+                >
+                  {
+                    displayAll
+                      ? Array.from(
+                        new Array(numPages),
+                        (el, index) => (
+                          <Page
+                            {...pageProps}
+                            inputRef={
+                              (pageNumber === index + 1)
+                                ? (ref => ref && ref.scrollIntoView())
+                                : null
+                            }
+                            key={`page_${index + 1}`}
+                            pageNumber={index + 1}
+                          />
+                        ),
+                      )
+                      : (
                         <Page
                           {...pageProps}
                           pageNumber={pageNumber || 1}
                         />
-                    }
-                  </Document>
-              }
+                      )
+                  }
+                </Document>
+              )}
             </div>
-            {
-              displayAll ||
-                <div className="Test__container__content__controls">
-                  <button
-                    disabled={pageNumber <= 1}
-                    onClick={this.previousPage}
-                  >
-                    Previous
-                  </button>
-                  <span>Page {pageNumber || (numPages ? 1 : '--')} of {numPages || '--'}</span>
-                  <button
-                    disabled={pageNumber >= numPages}
-                    onClick={this.nextPage}
-                  >
-                    Next
-                  </button>
-                </div>
-            }
+            {displayAll || (
+              <div className="Test__container__content__controls">
+                <button
+                  type="button"
+                  disabled={pageNumber <= 1}
+                  onClick={this.previousPage}
+                >
+                  Previous
+                </button>
+                <span>
+                  {`Page ${pageNumber || (numPages ? 1 : '--')} of ${numPages || '--'}`}
+                </span>
+                <button
+                  type="button"
+                  disabled={pageNumber >= numPages}
+                  onClick={this.nextPage}
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </main>
         </div>
       </div>
